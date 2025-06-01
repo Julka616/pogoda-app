@@ -1,9 +1,12 @@
-FROM node:18-slim as builder
+FROM node:20-slim AS builder
+
 WORKDIR /app
+
 COPY package*.json ./
 RUN npm install
 
-FROM node:18-slim
+FROM node:20-slim
+
 LABEL org.opencontainers.image.authors="Julia"
 
 WORKDIR /app
