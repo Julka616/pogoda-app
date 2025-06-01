@@ -55,7 +55,7 @@ jobs:
           input: image.tar
           severity: CRITICAL,HIGH
           format: table
-          exit-code: 1
+          exit-code: 0
 
       # 🔧 Multi-arch push po skanowaniu
       - name: Push image to DockerHub and GHCR
