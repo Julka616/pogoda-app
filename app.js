@@ -1,32 +1,37 @@
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
-const app = express();
-const PORT = 3000;
+// Importujemy wymagane moduły
+const express = require('express'); // framework do tworzenia serwera HTTP
+const axios = require('axios'); // biblioteka do wykonywania zapytań HTTP
+const path = require('path'); // moduł do obsługi ścieżek plików
 
-// Informacja w logach przy starcie
+// Tworzymy instancję aplikacji Express
+const app = express();
+const PORT = 3000; // Port, na którym nasłuchuje serwer
+
+// Wyświetlamy informację o starcie aplikacji
 const now = new Date();
 console.log(`Aplikacja uruchomiona: ${now.toLocaleString()}, autor: Julia, port: ${PORT}`);
 
-// Middleware
+// Ustawiamy folder 'public' jako katalog ze statycznymi plikami (CSS, obrazy itd.)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Middleware do parsowania danych przesyłanych przez formularz (x-www-form-urlencoded)
 app.use(express.urlencoded({ extended: true }));
 
-// Strona główna
+// Obsługa żądania GET na ścieżkę główną – wyświetlenie strony startowej (formularza)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
-// Obsługa formularza
+// Obsługa żądania POST na ścieżkę /pogoda – po wysłaniu formularza
 app.post('/pogoda', async (req, res) => {
-  const country = req.body.country;
-  const city = req.body.city;
+  const country = req.body.country; // Pobieramy kraj z formularza
+  const city = req.body.city;       // Pobieramy miasto z formularza
 
-  // Przykładowe współrzędne dla wybranych miast
+  // Przykładowe dane – współrzędne geograficzne dla wybranych miast
   const cities = {
     "Polska": {
       "Warszawa": { lat: 52.23, lon: 21.01 },
-      "Kraków": { lat: 50.06, lon: 19.94 },
+      "Lublin": { lat: 51.25, lon: 22.57 },
       "Gdańsk": { lat: 54.35, lon: 18.65 }
     },
     "Niemcy": {
@@ -41,65 +46,55 @@ app.post('/pogoda', async (req, res) => {
     }
   };
 
-  // Sprawdzanie, czy miasto i kraj istnieją w danych
+  // Sprawdzenie, czy dane miasto i kraj są dostępne w naszej bazie
   if (!cities[country] || !cities[country][city]) {
     return res.send("Błąd: Nie znaleziono danych dla wybranego miasta i kraju.");
   }
 
+  // Pobieramy współrzędne geograficzne miasta
   const { lat, lon } = cities[country][city];
 
   try {
+    // Wysyłamy zapytanie do API open-meteo z aktualnymi danymi pogodowymi
     const response = await axios.get(`https://api.open-meteo.com/v1/forecast`, {
       params: {
         latitude: lat,
         longitude: lon,
-        current_weather: true
+        current_weather: true // Pobieramy tylko aktualną pogodę
       }
     });
 
+    // Odczytujemy dane pogodowe z odpowiedzi
     const weather = response.data.current_weather;
 
-    // Formatowanie daty z odpowiedzi API
-    const weatherDate = new Date(weather.time);
-    const weatherDateFormatted = weatherDate.toLocaleDateString('pl-PL', {
-      timeZone: 'Europe/Warsaw' // Wymuszenie strefy czasowej Europy/Warszawy
-    });
-    const weatherTimeFormatted = weatherDate.toLocaleTimeString('pl-PL', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'Europe/Warsaw' // Wymuszenie strefy czasowej Europy/Warszawy
-    });
+    // Pobieramy bieżącą datę i czas serwera (w strefie czasu Warszawy)
+    const serverDate = new Date();
+    const localServerDate = new Date(serverDate.toLocaleString("en-US", { timeZone: "Europe/Warsaw" }));
 
-    // Logowanie daty i godziny serwera
-    const serverDate = now.toLocaleDateString('pl-PL');
-    const serverTime = now.toLocaleTimeString('pl-PL', {
+    // Formatowanie daty i czasu
+    const serverDateFormatted = localServerDate.toLocaleDateString('pl-PL');
+    const serverTimeFormatted = localServerDate.toLocaleTimeString('pl-PL', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
     });
-    console.log(`Serwer - Data: ${serverDate}, Godzina: ${serverTime}`);
 
-    // Odpowiedź HTML
+    // Wyświetlamy wyniki w przeglądarce
     res.send(`
-      <html>
-        <head><link rel="stylesheet" href="/style.css" /></head>
-        <body>
-          <h1>Pogoda w ${city}, ${country}</h1>
-          <p>Temperatura: ${weather.temperature}°C</p>
-          <p>Wiatr: ${weather.windspeed} km/h</p>
-          <p>Data i Godzina: ${weatherDateFormatted} ${weatherTimeFormatted}</p>
-          <br><a href="/">Wróć</a>
-        </body>
-      </html>
+      <h2>Pogoda w ${city}, ${country}</h2>
+      <p>Temperatura: ${weather.temperature}°C</p>
+      <p>Wiatr: ${weather.windspeed} km/h</p>
+      <p>Data i Godzina: ${serverDateFormatted} ${serverTimeFormatted}</p>
     `);
 
   } catch (err) {
+    // Obsługa błędów np. problemów z API
     console.error(err);
     res.send("Wystąpił błąd podczas pobierania pogody.");
   }
 });
 
+// Uruchamiamy serwer i nasłuchujemy na wskazanym porcie
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Aplikacja działa na porcie ${PORT}`);
 });

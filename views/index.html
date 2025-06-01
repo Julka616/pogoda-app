@@ -1,63 +1,96 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikacja Pogodowa</title>
-    <link rel="stylesheet" href="/style.css"> <!-- Link do zewnętrznego pliku CSS -->
+    <meta charset="UTF-8"> <!-- Ustawienie kodowania znaków na UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsywność na urządzeniach mobilnych -->
+    <title>Aplikacja Pogodowa</title> <!-- Tytuł strony w przeglądarce -->
+    <link rel="stylesheet" href="/style.css"> <!-- Dołączenie zewnętrznego pliku CSS -->
 </head>
 <body>
-    <div class="container">
-        <h1>Aplikacja Pogodowa</h1>
-        <form method="POST" action="/pogoda">
+    <div class="container"> <!-- Główne opakowanie dla treści -->
+        <h1>Aplikacja Pogodowa</h1> <!-- Nagłówek strony -->
+
+        <!-- Formularz pogodowy wysyłany metodą POST na adres /pogoda -->
+        <form id="weather-form" method="POST" action="/pogoda">
             <div class="form-group">
                 <label for="country">Wybierz kraj:</label>
+                <!-- Lista rozwijana z krajami -->
                 <select name="country" id="country" required>
                     <option value="">Wybierz kraj...</option>
                     <option value="Polska">Polska</option>
                     <option value="Niemcy">Niemcy</option>
                     <option value="Francja">Francja</option>
-                    <!-- Dodaj więcej krajów według potrzeb -->
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="city">Miasto:</label>
+                <!-- Lista rozwijana z miastami (uzupełniana dynamicznie przez JavaScript) -->
                 <select name="city" id="city" required>
                     <option value="">Wybierz miasto...</option>
-                    <!-- Miasta będą zmieniane dynamicznie -->
                 </select>
             </div>
 
-            <button type="submit">Sprawdź pogodę</button>
+            <button type="submit">Sprawdź pogodę</button> <!-- Przycisk wysyłający formularz -->
         </form>
+
+        <!-- Sekcja, w której pojawi się wynik (odpowiedź z serwera) -->
+        <div id="weather-result" style="margin-top: 20px;"></div>
     </div>
 
+    <!-- Skrypt JS do dynamicznej obsługi formularza -->
     <script>
-        // Funkcja do zmiany listy miast w zależności od wybranego kraju
+        // Po zmianie wybranego kraju, uzupełniamy listę miast
         document.getElementById("country").addEventListener("change", function() {
-            const country = this.value;
-            const citySelect = document.getElementById("city");
+            const country = this.value; // Wartość wybranego kraju
+            const citySelect = document.getElementById("city"); // Element select z miastami
 
-            let cities = [];
+            let cities = []; // Lista miast do uzupełnienia
 
+            // W zależności od kraju, ustawiamy odpowiednie miasta
             if (country === "Polska") {
-                cities = ["Warszawa", "Kraków", "Gdańsk"];
+                cities = ["Warszawa", "Lublin", "Gdańsk"];
             } else if (country === "Niemcy") {
                 cities = ["Berlin", "Monachium", "Hamburg"];
             } else if (country === "Francja") {
                 cities = ["Paryż", "Marsylia", "Lyon"];
             }
 
-            // Wyczyść poprzednie opcje miast
+            // Czyścimy poprzednie opcje i dodajemy nowe
             citySelect.innerHTML = '<option value="">Wybierz miasto...</option>';
 
-            // Dodaj nowe opcje miast
             cities.forEach(function(city) {
                 const option = document.createElement("option");
                 option.value = city;
                 option.textContent = city;
                 citySelect.appendChild(option);
+            });
+        });
+
+        // Obsługa formularza – wysyłanie danych AJAXem (bez przeładowania strony)
+        document.getElementById("weather-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // Zatrzymujemy domyślne wysyłanie formularza
+
+            const country = document.getElementById("country").value; // Wybrany kraj
+            const city = document.getElementById("city").value;       // Wybrane miasto
+
+            // Wysyłamy dane do serwera metodą POST
+            fetch("/pogoda", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({ country, city }) // Przesyłane dane formularza
+            })
+            .then(response => response.text()) // Odbieramy odpowiedź jako tekst HTML
+            .then(data => {
+                // Wyświetlamy wynik w <div id="weather-result">
+                document.getElementById("weather-result").innerHTML = data;
+            })
+            .catch(error => {
+                // Obsługa błędu – np. brak odpowiedzi z serwera
+                document.getElementById("weather-result").innerHTML = "Błąd podczas pobierania pogody.";
+                console.error("Błąd:", error);
             });
         });
     </script>
