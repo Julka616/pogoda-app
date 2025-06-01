@@ -43,14 +43,16 @@ jobs:
           context: .
           push: false
           platforms: linux/amd64,linux/arm64
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest,mode=max
-          # Usunięto outputs: type=docker - powodowało błąd
+          tags: |
+            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app:latest
+          cache-from: |
+            type=registry,ref=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest
+          cache-to: |
+            type=registry,ref=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest,mode=max
 
       - name: Save image to tar file (for scanning)
         run: |
-          docker save ${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app:latest -o image.tar
+          docker save docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app:latest -o image.tar
 
       - name: Scan image for vulnerabilities (Trivy)
         uses: aquasecurity/trivy-action@master
@@ -68,7 +70,9 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app:latest
+            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app:latest
             ghcr.io/${{ github.repository_owner }}/pogoda-app:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest,mode=max
+          cache-from: |
+            type=registry,ref=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest
+          cache-to: |
+            type=registry,ref=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest,mode=max
