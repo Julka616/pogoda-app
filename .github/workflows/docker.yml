@@ -36,23 +36,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image (no push yet)
-        id: build
+      # 🔧 Budujemy lokalny obraz do skanowania (tylko linux/amd64)
+      - name: Build image for local scan
         uses: docker/build-push-action@v4
         with:
           context: .
           push: false
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app:latest
-          cache-from: |
-            type=registry,ref=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest
-          cache-to: |
-            type=registry,ref=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app-cache:latest,mode=max
+          load: true
+          platforms: linux/amd64
+          tags: pogoda-app:latest
 
       - name: Save image to tar file (for scanning)
-        run: |
-          docker save docker.io/${{ secrets.DOCKERHUB_USERNAME }}/pogoda-app:latest -o image.tar
+        run: docker save pogoda-app:latest -o image.tar
 
       - name: Scan image for vulnerabilities (Trivy)
         uses: aquasecurity/trivy-action@master
@@ -62,6 +57,7 @@ jobs:
           format: table
           exit-code: 1
 
+      # 🔧 Multi-arch push po skanowaniu
       - name: Push image to DockerHub and GHCR
         if: success()
         uses: docker/build-push-action@v4
