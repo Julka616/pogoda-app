@@ -36,7 +36,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 🔧 Budujemy lokalny obraz do skanowania (tylko linux/amd64)
+      #  Budujemy lokalny obraz do skanowania (tylko linux/amd64)
       - name: Build image for local scan
         uses: docker/build-push-action@v4
         with:
@@ -57,7 +57,7 @@ jobs:
           format: table
           exit-code: 0
 
-      # 🔧 Multi-arch push po skanowaniu
+      #  Multi-arch push po skanowaniu
       - name: Push image to DockerHub and GHCR
         if: success()
         uses: docker/build-push-action@v4
